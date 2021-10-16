@@ -8,6 +8,7 @@ jest.mock('react-native-size-matters', () => ({
 
 jest.mock('graphql-hooks', () => ({
   useQuery: jest.fn(),
+  useManualQuery: jest.fn(),
 }));
 
 jest.mock('react-native-actions-sheet', () => ({
