@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   FlatList
 } from 'react-native';
-import { useQuery } from 'graphql-hooks';
+import { useQuery, useManualQuery } from 'graphql-hooks';
 import Toast from 'react-native-simple-toast';
 // import { useQuery } from '@apollo/client';
 
@@ -36,53 +36,68 @@ const LaunchesHome = (props) => {
 
   const { navigation, route } = props
 
-  // this is one way to call multiple graphql at one hook
-  const { 
-    loading: loadingOfLaunches, 
-    error: errorOfLaunches, 
-    data: dataOfLaunches, 
-  } = useQuery(query, {
-    variables: {  
-      pageSize: 10,
-      after: cursorData,
-      missionPatch: missionPatch.SMALL, // enum
-    }
-  }) // use hooks to avoid side effect
+  const [fetchLaunches] = useManualQuery(query) // use hooks to avoid side effect
 
   useEffect(() => {
-    console.log(
-      "[LaunchesHome] data: ", dataOfLaunches, 
-      "\nloading: ", loadingOfLaunches,
-      "\nerror: ", errorOfLaunches // errorOfLaunches.fetchError.message => for displaying error message
-    );
+    fetchTheseLaunches(cursorData)
+      .then(res => {
+        console.log("[LaunchesHome] res: ", res);
 
-    if(errorOfLaunches !== undefined) {
-      setUpdating(false)
-      setIsLoading(false)
+        if(res.data !== undefined) {
+          const { launches } = res.data
+          const prevDataofLaunches: any = launchesData
 
-      Toast.show("Data of launches does not exist anymore", Toast.LONG)
-    } else if(dataOfLaunches !== undefined) {
-      const { launches } = dataOfLaunches
-      const prevDataofLaunches: any = launchesData
+          const newData: Array = launches.launches
+          const combinedData: Array = prevDataofLaunches.concat(newData)
 
-      const newData: Array = launches.launches
-      const combinedData: Array = prevDataofLaunches.concat(newData)
+          setLaunchesData(combinedData)
+          setCursorData(launches.cursor)
 
-      // console.log("[LaunchesHome] newData: ", newData);
-      // console.log("[LaunchesHome] combinedData: ", combinedData);
+          setUpdating(false)
+          setIsLoading(false)
+        }
+      })
+  }, [])
 
-      setLaunchesData(combinedData)
-      setCursorTemp(launches.cursor)
+  const fetchTheseLaunches = async(cursor) => {
+    const data = await fetchLaunches({
+      variables: {  
+        pageSize: 10,
+        after: cursor,
+        missionPatch: missionPatch.SMALL, // enum
+      }
+    })
 
-      setUpdating(false)
-      setIsLoading(false)
+    if(data !== undefined) {
+      return Promise.resolve(data)
     }
-  }, [loadingOfLaunches]) // listen for any change on 'data'
+  }
 
   const callingNextPage = () => {
     console.log("[LaunchesHome] callingNextPage! ")
     setUpdating(true)
-    setCursorData(cursorTemp)
+    fetchTheseLaunches(cursorData)
+      .then(res => {
+        console.log("[LaunchesHome] res paginating: ", res);
+        // set updating to false
+        if(res.error !== undefined) {
+          setUpdating(false)
+          setIsLoading(false)
+
+          Toast.show("Data of launches does not exist anymore", Toast.LONG)
+        } else if(res.data !== undefined) {
+          const { launches } = res.data
+          const prevDataofLaunches: any = launchesData
+
+          const newData: Array = launches.launches
+          const combinedData: Array = prevDataofLaunches.concat(newData)
+
+          setLaunchesData(combinedData)
+          setCursorData(launches.cursor)
+
+          setUpdating(false)
+        }
+      })
   }
   
   const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}) => {
