@@ -3,7 +3,7 @@ import { Text, View, Animated, ActivityIndicator, StyleSheet } from 'react-nativ
 
 import propTypes from 'prop-types';
 import { GlobalStyle, LaunchDetailStyle } from '../../GlobalStyle.js/GlobalStyle';
-import { useQuery } from 'graphql-hooks';
+import { useQuery, useManualQuery } from 'graphql-hooks';
 import { LAUNCH_QUERY } from '../../GraphQL/Queries';
 import { LaunchHeader } from '../../Headers/CommonHeaders';
 import { moderateScale } from 'react-native-size-matters';
@@ -22,13 +22,6 @@ const RenderRocketData = ({
     <Text style={[LaunchDetailStyle.text, {flex: 1}]}>
       {value}
     </Text>
-
-    {
-      // vehicle: rocket.name
-      // mission: mission.name
-      // rocket type: rocket.type
-      // site: site
-    }
   </View>
 )
 
@@ -40,29 +33,33 @@ const LaunchDetail = ({
   const [enableImage, setEnableImage]: boolean = useState(true)
   const [launchData, setLaunchData]: Object = useState(null)
 
+  const query: any = LAUNCH_QUERY
+
+  const [fetchLaunch]:?Function = useManualQuery(query)
+
   const closePress = useCallback(() => {
     onClosePress()
   }, [onClosePress])
-  
-  const query = LAUNCH_QUERY
-  const {
-    data,
-    loading,
-    error
-  } = useQuery(query, {
-    variables: {
-      id: id
-    }
-  })
 
   useEffect(() => {
-    console.log("[LaunchesDetail] data: ", data);
+    fetchThisLaunch(id)
+      .then(res => {
+        // console.log("[LaunchesDetail] res: ", res);
+        setLaunchData(res.data.launch)
+      })
+  }, [])
+
+  const fetchThisLaunch = async (id, callback) => {
+    const data = await fetchLaunch({
+      variables: {
+        id: id
+      }
+    })
     
-    if(data != undefined) {
-      const { launch } = data
-      setLaunchData(launch)
+    if(data !== undefined) {
+      return Promise.resolve(data)
     }
-  }, [loading])
+  }
 
   return(
     <View style={LaunchDetailStyle.root}>
