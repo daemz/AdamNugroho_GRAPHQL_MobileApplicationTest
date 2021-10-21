@@ -8,7 +8,8 @@ import {
   Text,
   StatusBar,
   ActivityIndicator,
-  FlatList
+  FlatList,
+  NativeModules
 } from 'react-native';
 import { useQuery, useManualQuery } from 'graphql-hooks';
 import Toast from 'react-native-simple-toast';
@@ -36,9 +37,12 @@ const LaunchesHome = (props) => {
 
   const { navigation, route } = props
 
+  const { GraphqlModule } = NativeModules
+
   const [fetchLaunches] = useManualQuery(query) // use hooks to avoid side effect
 
   useEffect(() => {
+    GraphqlModule.test("this is a native module test")
     fetchTheseLaunches(cursorData)
       .then(res => {
         console.log("[LaunchesHome] res: ", res);
