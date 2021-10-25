@@ -32,6 +32,7 @@ const LaunchesHome = (props) => {
   const [selectedId, setSelectedId]: string = useState("1")
   const [query, setQuery]: any = useState(LAUNCHES_QUERY)
   const [cursorData, setCursorData]: string = useState("")
+  const [doesHaveMore, setDoeshaveMore]: boolean = useState(true)
   const [cursorTemp, setCursorTemp]: string = useState("")
   const [updating, setUpdating]: boolean = useState(false)
 
@@ -43,25 +44,50 @@ const LaunchesHome = (props) => {
 
   useEffect(() => {
     GraphqlModule.test("this is a native module test")
-    fetchTheseLaunches(cursorData)
-      .then(res => {
-        console.log("[LaunchesHome] res: ", res);
+    fetchNativeModuleLaunches()
+    // fetchTheseLaunches(cursorData)
+    //   .then(res => {
+    //     console.log("[LaunchesHome] res: ", res);
 
-        if(res.data !== undefined) {
-          const { launches } = res.data
-          const prevDataofLaunches: any = launchesData
+    //     if(res.data !== undefined) {
+    //       const { launches } = res.data
+    //       const prevDataofLaunches: any = launchesData
 
-          const newData: Array = launches.launches
-          const combinedData: Array = prevDataofLaunches.concat(newData)
+    //       const newData: Array = launches.launches
+    //       const combinedData: Array = prevDataofLaunches.concat(newData)
 
-          setLaunchesData(combinedData)
-          setCursorData(launches.cursor)
+    //       setLaunchesData(combinedData)
+    //       setCursorData(launches.cursor)
 
-          setUpdating(false)
-          setIsLoading(false)
-        }
-      })
+    //       setUpdating(false)
+    //       setIsLoading(false)
+    //     }
+    //   })
   }, [])
+
+  const fetchNativeModuleLaunches = async(cursor) => {
+    await GraphqlModule.fetchLaunches(cursor || "", (res) => {
+      const launchesNativeData = JSON.parse(res)
+      // console.log("[LaunchesHome] GraphqlModule.fetchLaunches res: ", launchesNativeData);
+      
+      const cursor = launchesNativeData.cursor
+      const hasMore = launchesNativeData.hasMore
+      
+      // set the res to data here
+      const { launches } = launchesNativeData
+      const prevDataofLaunches: any = launchesData
+
+      const newData: Array = launches
+      const combinedData: Array = prevDataofLaunches.concat(newData)
+
+      setLaunchesData(combinedData)
+      setCursorData(cursor)
+      setDoeshaveMore(hasMore)
+
+      setUpdating(false)
+      setIsLoading(false)
+    })
+  }
 
   const fetchTheseLaunches = async(cursor) => {
     const data = await fetchLaunches({
@@ -78,30 +104,33 @@ const LaunchesHome = (props) => {
   }
 
   const callingNextPage = () => {
-    console.log("[LaunchesHome] callingNextPage! ")
-    setUpdating(true)
-    fetchTheseLaunches(cursorData)
-      .then(res => {
-        console.log("[LaunchesHome] res paginating: ", res);
-        // set updating to false
-        if(res.error !== undefined) {
-          setUpdating(false)
-          setIsLoading(false)
+    if(doesHaveMore == true) {
+      console.log("[LaunchesHome] callingNextPage! ")
+      setUpdating(true)
+      fetchNativeModuleLaunches(cursorData)
+    }
+    // fetchTheseLaunches(cursorData)
+    //   .then(res => {
+    //     console.log("[LaunchesHome] res paginating: ", res);
+    //     // set updating to false
+    //     if(res.error !== undefined) {
+    //       setUpdating(false)
+    //       setIsLoading(false)
 
-          Toast.show("Data of launches does not exist anymore", Toast.LONG)
-        } else if(res.data !== undefined) {
-          const { launches } = res.data
-          const prevDataofLaunches: any = launchesData
+    //       Toast.show("Data of launches does not exist anymore", Toast.LONG)
+    //     } else if(res.data !== undefined) {
+    //       const { launches } = res.data
+    //       const prevDataofLaunches: any = launchesData
 
-          const newData: Array = launches.launches
-          const combinedData: Array = prevDataofLaunches.concat(newData)
+    //       const newData: Array = launches.launches
+    //       const combinedData: Array = prevDataofLaunches.concat(newData)
 
-          setLaunchesData(combinedData)
-          setCursorData(launches.cursor)
+    //       setLaunchesData(combinedData)
+    //       setCursorData(launches.cursor)
 
-          setUpdating(false)
-        }
-      })
+    //       setUpdating(false)
+    //     }
+    //   })
   }
   
   const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}) => {

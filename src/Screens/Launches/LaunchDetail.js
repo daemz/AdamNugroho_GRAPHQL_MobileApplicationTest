@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useCallback} from 'react';
-import { Text, View, Animated, ActivityIndicator, StyleSheet } from 'react-native';
+import { Text, View, Animated, ActivityIndicator, StyleSheet, NativeModules } from 'react-native';
 
 import propTypes from 'prop-types';
 import { GlobalStyle, LaunchDetailStyle } from '../../GlobalStyle.js/GlobalStyle';
@@ -37,16 +37,24 @@ const LaunchDetail = ({
 
   const [fetchLaunch]:?Function = useManualQuery(query)
 
+  const { GraphqlModule } = NativeModules
+
   const closePress = useCallback(() => {
     onClosePress()
   }, [onClosePress])
 
   useEffect(() => {
-    fetchThisLaunch(id)
-      .then(res => {
-        // console.log("[LaunchesDetail] res: ", res);
-        setLaunchData(res.data.launch)
-      })
+    GraphqlModule.fetchLaunch(id, (res) => {
+      const launchNativeData = JSON.parse(res)
+      // console.log("[LaunchDetail] GraphqlModule.fetchLaunch res: ", launchNativeData);
+
+      setLaunchData(launchNativeData)
+    })
+    // fetchThisLaunch(id)
+    //   .then(res => {
+    //     // console.log("[LaunchesDetail] res: ", res);
+    //     setLaunchData(res.data.launch)
+    //   })
   }, [])
 
   const fetchThisLaunch = async (id, callback) => {
