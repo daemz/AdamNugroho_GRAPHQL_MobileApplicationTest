@@ -1,4 +1,4 @@
-package com.adam_mobiletest;
+package com.adam_mobiletest.modules;
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
